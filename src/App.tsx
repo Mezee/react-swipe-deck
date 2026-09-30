@@ -49,6 +49,7 @@ function App() {
     flightTimer = useRef<ReturnType<typeof setTimeout>>(),
     busy = useRef(false),
     report = useRef<HTMLDivElement>(null),
+    commentsScroll = useRef<HTMLDivElement>(null),
     reportStart = useRef<number | null>(null);
   const reducedMotion = useReducedMotion();
   const sample = useRef({ x: 0, time: 0, velocity: 0 });
@@ -369,10 +370,44 @@ function App() {
                       <h2>Comments</h2>
                       {idea.comments.length ? (
                         <>
-                          <div className="comment">
-                            <strong>{idea.comments[comment].label}</strong>
-                            <small>{idea.comments[comment].author}</small>
-                            <p>{idea.comments[comment].text}</p>
+                          <div
+                            className="comments-scroll"
+                            ref={commentsScroll}
+                            tabIndex={0}
+                            role="region"
+                            aria-label="Audience comments"
+                            onScroll={(e) =>
+                              setComment(
+                                Math.round(
+                                  e.currentTarget.scrollLeft /
+                                    (e.currentTarget.clientWidth + 16),
+                                ),
+                              )
+                            }
+                            onKeyDown={(e) => {
+                              if (
+                                e.key === 'ArrowRight' ||
+                                e.key === 'ArrowLeft'
+                              ) {
+                                e.preventDefault();
+                                e.currentTarget.scrollBy({
+                                  left:
+                                    (e.key === 'ArrowRight' ? 1 : -1) *
+                                    (e.currentTarget.clientWidth + 16),
+                                  behavior: reducedMotion
+                                    ? 'instant'
+                                    : 'smooth',
+                                });
+                              }
+                            }}
+                          >
+                            {idea.comments.map((c) => (
+                              <div className="comment" key={c.label}>
+                                <strong>{c.label}</strong>
+                                <small>{c.author}</small>
+                                <p>{c.text}</p>
+                              </div>
+                            ))}
                           </div>
                           <div className="dots">
                             {idea.comments.map((c, i) => (
@@ -380,7 +415,19 @@ function App() {
                                 key={c.label}
                                 className={comment === i ? 'active' : ''}
                                 aria-label={`Comment ${i + 1}`}
-                                onClick={() => setComment(i)}
+                                aria-current={
+                                  comment === i ? 'true' : undefined
+                                }
+                                onClick={() =>
+                                  commentsScroll.current?.scrollTo({
+                                    left:
+                                      i *
+                                      (commentsScroll.current.clientWidth + 16),
+                                    behavior: reducedMotion
+                                      ? 'instant'
+                                      : 'smooth',
+                                  })
+                                }
                               />
                             ))}
                           </div>
