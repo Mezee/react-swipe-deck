@@ -505,3 +505,61 @@ main > .sample-note {
   display: block;
   flex-shrink: 0;
 }
+
+/* Editorial typography, chosen from direction 02. */
+body {
+  font-family: 'Manrope Variable', sans-serif;
+}
+h1 {
+  font-family: 'Fraunces Variable', serif;
+  font-size: 32px;
+  line-height: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.signal {
+  font-size: 17px;
+  line-height: 26px;
+  font-weight: 400;
+  color: #555a64;
+  text-wrap: pretty;
+}
+.badge {
+  font-size: 12px;
+  line-height: 20px;
+}
+.badge strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.report-body h2 {
+  font-family: 'Manrope Variable', sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #666b75;
+}
+.report-body section > p,
+.report-body section > .empty {
+  font-size: 18px;
+  line-height: 28px;
+  font-weight: 400;
+  text-wrap: pretty;
+}
+.comment {
+  font-size: 14px;
+  line-height: 23px;
+}
+@media (max-width: 540px) {
+  h1 {
+    font-size: 28px;
+    line-height: 32px;
+  }
+  .signal {
+    font-size: 17px;
+    line-height: 26px;
+  }
+}

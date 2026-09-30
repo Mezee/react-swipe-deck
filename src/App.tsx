@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { ideas, type VideoIdea } from './content';
 import { clamp } from './utils/math';
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/manrope';
 import './index.css';
 import LightRays from './components/light-rays/LightRays';
 import {
