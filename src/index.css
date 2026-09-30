@@ -453,3 +453,12 @@ h2 {
     transition: none;
   }
 }
+
+.idea-card,
+.idea-card.dragging {
+  transition: none;
+  cursor: grab;
+}
+.idea-card.dragging {
+  cursor: grabbing;
+}

@@ -2,12 +2,26 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { ideas, type VideoIdea } from './content';
 import { clamp } from './utils/math';
 import './index.css';
+import {
+  motion,
+  AnimatePresence,
+  LayoutGroup,
+  useReducedMotion,
+} from 'motion/react';
 import ProgressMask from './components/progress-mask';
 const thumbnail = '/thumbnail.jpg';
-function Heading({ idea }: { idea: VideoIdea }) {
+function Heading({
+  idea,
+  shared = false,
+}: {
+  idea: VideoIdea;
+  shared?: boolean;
+}) {
   return (
     <>
-      <h1>{idea.title}</h1>
+      <motion.h1 layoutId={shared ? `title-${idea.id}` : undefined}>
+        {idea.title}
+      </motion.h1>
       <p className="signal">{idea.signal}</p>
       <div className="badge">
         Demand Score <strong>{idea.score}</strong>
@@ -33,6 +47,8 @@ function App() {
     busy = useRef(false),
     report = useRef<HTMLDivElement>(null),
     reportStart = useRef<number | null>(null);
+  const reducedMotion = useReducedMotion();
+  const sample = useRef({ x: 0, time: 0, velocity: 0 });
   const idea = ideas[index];
   const cancel = () => {
     clearTimeout(timer.current);
@@ -94,11 +110,20 @@ function App() {
     setInteracting(true);
     e.currentTarget.setPointerCapture(e.pointerId);
     start.current = { x: e.clientX, y: e.clientY };
+    sample.current = { x: e.clientX, time: performance.now(), velocity: 0 };
     setHolding(true);
     timer.current = setTimeout(open, 3000);
   };
   const move = (e: PointerEvent<HTMLElement>) => {
     if (!start.current) return;
+    const now = performance.now();
+    const elapsed = now - sample.current.time;
+    if (elapsed > 0)
+      sample.current = {
+        x: e.clientX,
+        time: now,
+        velocity: (e.clientX - sample.current.x) / elapsed,
+      };
     const x = e.clientX - start.current.x,
       y = e.clientY - start.current.y;
     if (Math.hypot(x, y) > 10) cancel();
@@ -110,251 +135,308 @@ function App() {
     if (!start.current) return;
     const dx = e.clientX - start.current.x;
     start.current = null;
-    if (Math.abs(dx) > 100) navigate(dx < 0 ? 1 : -1, dx < 0 ? -1 : 1);
+    const velocity =
+      performance.now() - sample.current.time < 100
+        ? sample.current.velocity
+        : 0;
+    const flick =
+      Math.abs(dx) > 25 &&
+      Math.abs(velocity) > 0.5 &&
+      Math.sign(dx) === Math.sign(velocity);
+    if (Math.abs(dx) > 100 || flick) navigate(dx < 0 ? 1 : -1, dx < 0 ? -1 : 1);
     else setDrag({ x: 0, y: 0 });
   };
   return (
-    <main>
-      <header className="app-header">
-        <span>Next video</span>
-        <small>Five ideas. One next move.</small>
-      </header>
-      <nav className="top-progress" aria-label="Deck progress">
-        {ideas.map((v, i) => (
-          <button
-            key={v.id}
-            aria-label={`Go to idea ${i + 1}`}
-            aria-current={i === index ? 'step' : undefined}
-            className={i <= index ? 'filled' : ''}
-            disabled={exiting}
-            onClick={() => {
-              cancel();
-              setIndex(i);
-              setComment(0);
-            }}
-          />
-        ))}
-      </nav>
-      <div className="deck-area">
-        <div
-          className={`stack preview-card ${exiting ? 'promoting' : ''}`}
-          aria-hidden="true"
-        >
-          <div className="thumbnail">
-            <img src={thumbnail} alt="" />
-          </div>
-          <div className="description">
-            <Heading idea={ideas[(index + 1) % ideas.length]} />
-          </div>
-        </div>
-        <article
-          key={idea.id}
-          aria-label={`Video idea ${index + 1} of 5`}
-          className={`idea-card ${interacting ? 'dragging' : ''} ${exiting ? 'exiting' : ''}`}
-          style={{
-            transform: `translate(${drag.x}px,${drag.y}px) rotate(${clamp(drag.x / 600, -1, 1) * -30}deg)`,
-          }}
-          onPointerDown={down}
-          onPointerMove={move}
-          onPointerUp={up}
-          onPointerCancel={() => {
-            cancel();
-            setInteracting(false);
-            start.current = null;
-            setDrag({ x: 0, y: 0 });
-          }}
-          onContextMenu={(e) => e.preventDefault()}
-        >
-          <div className="thumbnail">
-            <img
-              src={thumbnail}
-              alt="Pixelated owl from your Paper design"
-              draggable={false}
+    <LayoutGroup>
+      <main>
+        <header className="app-header">
+          <span>Next video</span>
+          <small>Five ideas. One next move.</small>
+        </header>
+        <nav className="top-progress" aria-label="Deck progress">
+          {ideas.map((v, i) => (
+            <button
+              key={v.id}
+              aria-label={`Go to idea ${i + 1}`}
+              aria-current={i === index ? 'step' : undefined}
+              className={i <= index ? 'filled' : ''}
+              disabled={exiting}
+              onClick={() => {
+                cancel();
+                setIndex(i);
+                setComment(0);
+              }}
             />
-            {index > 0 && (
-              <span className="thumbnail-caption">
-                {
-                  [
-                    '',
-                    'YOUR FILES. YOUR AI.',
-                    'WHAT HARDWARE?',
-                    'ONE REAL WORKFLOW',
-                    'GET UNSTUCK',
-                  ][index]
-                }
-              </span>
-            )}
-          </div>
-          <div className="description">
-            <Heading idea={idea} />
-          </div>
-          <ProgressMask
-            progress={clamp(drag.x / 100, -1, 1)}
-            isInteracting={interacting}
-          />
-          <div className={`hold-track ${holding ? 'holding' : ''}`}>
-            <span />
-          </div>
-        </article>
-      </div>
-      <nav className="deck-controls" aria-label="Deck navigation">
-        <button aria-label="Previous idea" onClick={() => navigate(-1)}>
-          ←
-        </button>
-        <button aria-label="Next idea" onClick={() => navigate(1)}>
-          →
-        </button>
-      </nav>
-      <div className="deck-footer">
-        <button className="text-button" onClick={open}>
-          View report ↗
-        </button>
-        <span>{index + 1} / 5 · Hold card for 3 seconds</span>
-      </div>
-      <p className="sample-note">
-        Prototype content · Scores and ideas are illustrative; first card uses
-        your supplied report.
-      </p>
-      {expanded && (
-        <div
-          className="report-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-label={idea.title}
-          onKeyDown={(e) => {
-            if (e.key === 'Tab') {
-              const nodes = Array.from(
-                e.currentTarget.querySelectorAll<HTMLButtonElement>('button'),
-              );
-              const first = nodes[0],
-                last = nodes[nodes.length - 1];
-              if (e.shiftKey && document.activeElement === first) {
-                e.preventDefault();
-                last.focus();
-              } else if (!e.shiftKey && document.activeElement === last) {
-                e.preventDefault();
-                first.focus();
-              }
-            }
-          }}
-        >
+          ))}
+        </nav>
+        <div className="deck-area">
           <div
-            ref={report}
-            tabIndex={-1}
-            className="report-scroll"
-            onTouchStart={(e) => {
-              reportStart.current =
-                report.current?.scrollTop === 0 ? e.touches[0].clientY : null;
-            }}
-            onTouchEnd={(e) => {
-              if (
-                reportStart.current !== null &&
-                e.changedTouches[0].clientY - reportStart.current > 100
-              )
-                close();
-              reportStart.current = null;
-            }}
+            className={`stack preview-card ${exiting ? 'promoting' : ''}`}
+            aria-hidden="true"
           >
-            <div className="report-shell">
-              <button
-                className="handle"
-                aria-label="Close report"
-                onClick={close}
-                onPointerDown={(e) => {
-                  reportStart.current = e.clientY;
-                  e.currentTarget.setPointerCapture(e.pointerId);
+            <div className="thumbnail">
+              <img src={thumbnail} alt="" />
+            </div>
+            <div className="description">
+              <Heading idea={ideas[(index + 1) % ideas.length]} />
+            </div>
+          </div>
+          <motion.article
+            key={idea.id}
+            aria-label={`Video idea ${index + 1} of 5`}
+            className={`idea-card ${interacting ? 'dragging' : ''} ${exiting ? 'exiting' : ''}`}
+            layoutId={`card-${idea.id}`}
+            animate={{
+              x: drag.x,
+              y: drag.y,
+              rotate: clamp(drag.x / 600, -1, 1) * -30,
+              scale: interacting ? 1.02 : 1,
+            }}
+            transition={
+              reducedMotion
+                ? { duration: 0 }
+                : interacting
+                  ? { duration: 0 }
+                  : exiting
+                    ? { duration: 0.3, ease: 'easeInOut' }
+                    : { type: 'spring', stiffness: 300, damping: 25 }
+            }
+            style={{ visibility: expanded ? 'hidden' : 'visible' }}
+            onPointerDown={down}
+            onPointerMove={move}
+            onPointerUp={up}
+            onPointerCancel={() => {
+              cancel();
+              setInteracting(false);
+              start.current = null;
+              setDrag({ x: 0, y: 0 });
+            }}
+            onContextMenu={(e) => e.preventDefault()}
+          >
+            <motion.div className="thumbnail" layoutId={`thumbnail-${idea.id}`}>
+              <img
+                src={thumbnail}
+                alt="Pixelated owl from your Paper design"
+                draggable={false}
+              />
+              {index > 0 && (
+                <span className="thumbnail-caption">
+                  {
+                    [
+                      '',
+                      'YOUR FILES. YOUR AI.',
+                      'WHAT HARDWARE?',
+                      'ONE REAL WORKFLOW',
+                      'GET UNSTUCK',
+                    ][index]
+                  }
+                </span>
+              )}
+            </motion.div>
+            <div className="description">
+              <Heading idea={idea} shared />
+            </div>
+            <ProgressMask
+              progress={clamp(drag.x / 100, -1, 1)}
+              isInteracting={interacting}
+            />
+            <div className={`hold-track ${holding ? 'holding' : ''}`}>
+              <span />
+            </div>
+          </motion.article>
+        </div>
+        <nav className="deck-controls" aria-label="Deck navigation">
+          <button aria-label="Previous idea" onClick={() => navigate(-1)}>
+            ←
+          </button>
+          <button aria-label="Next idea" onClick={() => navigate(1)}>
+            →
+          </button>
+        </nav>
+        <div className="deck-footer">
+          <button className="text-button" onClick={open}>
+            View report ↗
+          </button>
+          <span>{index + 1} / 5 · Hold card for 3 seconds</span>
+        </div>
+        <p className="sample-note">
+          Prototype content · Scores and ideas are illustrative; first card uses
+          your supplied report.
+        </p>
+        <AnimatePresence>
+          {' '}
+          {expanded && (
+            <motion.div
+              className="report-overlay"
+              key="report"
+              initial={{ backgroundColor: '#eeeeee00' }}
+              animate={{ backgroundColor: '#eeeeee' }}
+              exit={{ backgroundColor: '#eeeeee00' }}
+              transition={{ duration: reducedMotion ? 0 : 0.3 }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={idea.title}
+              onKeyDown={(e) => {
+                if (e.key === 'Tab') {
+                  const nodes = Array.from(
+                    e.currentTarget.querySelectorAll<HTMLButtonElement>(
+                      'button',
+                    ),
+                  );
+                  const first = nodes[0],
+                    last = nodes[nodes.length - 1];
+                  if (e.shiftKey && document.activeElement === first) {
+                    e.preventDefault();
+                    last.focus();
+                  } else if (!e.shiftKey && document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                  }
+                }
+              }}
+            >
+              <div
+                ref={report}
+                tabIndex={-1}
+                className="report-scroll"
+                onTouchStart={(e) => {
+                  reportStart.current =
+                    report.current?.scrollTop === 0
+                      ? e.touches[0].clientY
+                      : null;
                 }}
-                onPointerUp={(e) => {
+                onTouchEnd={(e) => {
                   if (
                     reportStart.current !== null &&
-                    e.clientY - reportStart.current > 60
+                    e.changedTouches[0].clientY - reportStart.current > 100
                   )
                     close();
                   reportStart.current = null;
                 }}
               >
-                <span />
-              </button>
-              <div className="thumbnail">
-                <img
-                  src={thumbnail}
-                  alt="Pixelated owl from your Paper design"
-                />
-              </div>
-              <div className="report-body">
-                <div className="report-heading">
-                  <Heading idea={idea} />
-                </div>
-                <section>
-                  <h2>Signal</h2>
-                  <p>{idea.demand}</p>
-                </section>
-                <section>
-                  <h2>Comments</h2>
-                  {idea.comments.length ? (
-                    <>
-                      <div className="comment">
-                        <strong>{idea.comments[comment].label}</strong>
-                        <small>{idea.comments[comment].author}</small>
-                        <p>{idea.comments[comment].text}</p>
-                      </div>
-                      <div className="dots">
-                        {idea.comments.map((c, i) => (
-                          <button
-                            key={c.label}
-                            className={comment === i ? 'active' : ''}
-                            aria-label={`Comment ${i + 1}`}
-                            onClick={() => setComment(i)}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  ) : (
-                    <p className="empty">
-                      No sourced comments yet. Validate this idea with audience
-                      research.
-                    </p>
-                  )}
-                </section>
-                <section>
-                  <h2>Edge</h2>
-                  <p>{idea.edge}</p>
-                </section>
-                <section>
-                  <h2>Alignment</h2>
-                  <p>{idea.alignment}</p>
-                </section>
-                <section>
-                  <h2>To succeed</h2>
-                  <p>{idea.success}</p>
-                </section>
-                <button
-                  className="select-button"
-                  onClick={() => {
-                    setSelected(idea.id);
-                    localStorage.setItem('selected-video', idea.id);
+                <motion.div
+                  className="report-shell"
+                  layoutId={`card-${idea.id}`}
+                  transition={{
+                    type: 'spring',
+                    stiffness: 300,
+                    damping: 30,
+                    duration: reducedMotion ? 0 : undefined,
                   }}
                 >
-                  {selected === idea.id
-                    ? '✓ Selected as your next video'
-                    : 'Make this next'}
-                </button>
-                <p className="sample-note">
-                  Prototype · Demand scores require validation.
-                </p>
+                  <button
+                    className="handle"
+                    aria-label="Close report"
+                    onClick={close}
+                    onPointerDown={(e) => {
+                      reportStart.current = e.clientY;
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                    }}
+                    onPointerUp={(e) => {
+                      if (
+                        reportStart.current !== null &&
+                        e.clientY - reportStart.current > 60
+                      )
+                        close();
+                      reportStart.current = null;
+                    }}
+                  >
+                    <span />
+                  </button>
+                  <motion.div
+                    className="thumbnail"
+                    layoutId={`thumbnail-${idea.id}`}
+                  >
+                    <img
+                      src={thumbnail}
+                      alt="Pixelated owl from your Paper design"
+                    />
+                  </motion.div>
+                  <motion.div
+                    className="report-body"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      delay: reducedMotion ? 0 : 0.2,
+                      duration: reducedMotion ? 0 : 0.2,
+                    }}
+                  >
+                    <div className="report-heading">
+                      <Heading idea={idea} shared />
+                    </div>
+                    <section>
+                      <h2>Signal</h2>
+                      <p>{idea.demand}</p>
+                    </section>
+                    <section>
+                      <h2>Comments</h2>
+                      {idea.comments.length ? (
+                        <>
+                          <div className="comment">
+                            <strong>{idea.comments[comment].label}</strong>
+                            <small>{idea.comments[comment].author}</small>
+                            <p>{idea.comments[comment].text}</p>
+                          </div>
+                          <div className="dots">
+                            {idea.comments.map((c, i) => (
+                              <button
+                                key={c.label}
+                                className={comment === i ? 'active' : ''}
+                                aria-label={`Comment ${i + 1}`}
+                                onClick={() => setComment(i)}
+                              />
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <p className="empty">
+                          No sourced comments yet. Validate this idea with
+                          audience research.
+                        </p>
+                      )}
+                    </section>
+                    <section>
+                      <h2>Edge</h2>
+                      <p>{idea.edge}</p>
+                    </section>
+                    <section>
+                      <h2>Alignment</h2>
+                      <p>{idea.alignment}</p>
+                    </section>
+                    <section>
+                      <h2>To succeed</h2>
+                      <p>{idea.success}</p>
+                    </section>
+                    <button
+                      className="select-button"
+                      onClick={() => {
+                        setSelected(idea.id);
+                        localStorage.setItem('selected-video', idea.id);
+                      }}
+                    >
+                      {selected === idea.id
+                        ? '✓ Selected as your next video'
+                        : 'Make this next'}
+                    </button>
+                    <p className="sample-note">
+                      Prototype · Demand scores require validation.
+                    </p>
+                  </motion.div>
+                </motion.div>
               </div>
-            </div>
-          </div>
-          <button
-            className="close-button"
-            aria-label="Close report"
-            onClick={close}
-          >
-            ×
-          </button>
-        </div>
-      )}
-    </main>
+              <button
+                className="close-button"
+                aria-label="Close report"
+                onClick={close}
+              >
+                ×
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </main>
+    </LayoutGroup>
   );
 }
 export default App;

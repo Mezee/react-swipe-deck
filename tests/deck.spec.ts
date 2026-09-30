@@ -21,7 +21,10 @@ test('browse five ideas, hold to read, select, and return', async ({
     );
   }
   await page.getByRole('button', { name: 'Next idea', exact: true }).click();
-  await expect(page.getByRole('article')).toHaveAttribute('aria-label', 'Video idea 1 of 5');
+  await expect(page.getByRole('article')).toHaveAttribute(
+    'aria-label',
+    'Video idea 1 of 5',
+  );
   await expect(page.getByRole('article')).not.toHaveClass(/exiting/);
   const card = await page.getByRole('article').boundingBox();
   if (!card) throw new Error('Missing card');
@@ -48,6 +51,8 @@ test('browse five ideas, hold to read, select, and return', async ({
     page.getByRole('button', { name: 'Selected as your next video' }),
   ).toBeVisible();
   await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('article')).toHaveCSS('transform', 'none');
   await page.mouse.move(card.x + card.width / 2, card.y + 100);
   await page.mouse.down();
   await page.mouse.move(card.x + card.width / 2 - 160, card.y + 100, {
@@ -131,4 +136,35 @@ test('direction overlays and fly-out animation match the demo', async ({
     await expect(card).not.toHaveClass(/exiting/);
   }
   await expect(card).toHaveAttribute('aria-label', 'Video idea 1 of 5');
+});
+
+test('short flick navigates and a slow short drag springs back', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:5173');
+  const card = page.getByRole('article');
+  const box = await card.boundingBox();
+  if (!box) throw new Error('Missing card');
+  const x = box.x + box.width / 2,
+    y = box.y + 100;
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 55, y);
+  await page.mouse.up();
+  await expect(card).toHaveAttribute('aria-label', 'Video idea 2 of 5');
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x - 40, y, { steps: 10 });
+  await page.waitForTimeout(150);
+  await page.mouse.up();
+  await expect(card).not.toHaveClass(/exiting/);
+  await expect(card).toHaveAttribute('aria-label', 'Video idea 2 of 5');
+  await expect(card).toHaveCSS('transform', 'none');
+  await page.getByRole('button', { name: 'View report' }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.waitForTimeout(700);
+  await page.screenshot({ path: 'artifacts/morph-report.png' });
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(card).toBeVisible();
 });
