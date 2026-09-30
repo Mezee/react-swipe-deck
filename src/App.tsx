@@ -419,16 +419,26 @@ function App() {
                   </motion.div>
                 </motion.div>
               </div>
-              <button
-                className="close-button"
-                aria-label="Close report"
-                onClick={close}
-              >
-                ×
-              </button>
             </motion.div>
           )}
         </AnimatePresence>
+        {expanded && (
+          <button
+            className="close-button"
+            aria-label="Close report"
+            onClick={close}
+          >
+            <svg width="32" height="32" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M5 5L19 19M19 5L5 19"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        )}
       </main>
     </LayoutGroup>
   );

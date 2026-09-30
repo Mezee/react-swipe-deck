@@ -493,3 +493,15 @@ main > .sample-note {
 .hold-perimeter rect {
   rx: 14px;
 }
+
+.close-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  z-index: 20;
+}
+.close-button svg {
+  display: block;
+  flex-shrink: 0;
+}
