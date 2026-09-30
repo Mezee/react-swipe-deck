@@ -25,11 +25,13 @@ function ProgressMask({ progress, isInteracting }: Props) {
   }, [progress]);
 
   const dasharray = Math.PI * 2 * 27;
-  const dashoffset = dasharray - Math.PI * 2 * 27 * clamp(progress, -1, 1);
+  const dashoffset =
+    dasharray - Math.PI * 2 * 27 * Math.abs(clamp(progress, -1, 1));
   const isActive = Math.abs(progress) === 1;
 
   return (
     <div
+      data-testid="drag-overlay"
       className={[
         styles.container,
         isActive && styles.active,

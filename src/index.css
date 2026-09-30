@@ -380,3 +380,76 @@ h2 {
     transition: none;
   }
 }
+
+/* Original demo stack: straight cards, recessed by 20px at 97% scale. */
+.top-progress {
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  width: min(524px, 100%);
+  margin: 0 auto 18px;
+}
+.top-progress button {
+  flex: 1;
+  height: 15px;
+  border-radius: 3px;
+  outline: 2px solid #bdbdbd80;
+  background: transparent;
+  padding: 0;
+  transition: background 0.3s;
+}
+.top-progress button.filled {
+  background: #ddd;
+}
+.top-progress button:focus-visible {
+  outline: 3px solid #292f36;
+}
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateY(20px) scale(0.97);
+  transform-origin: center top;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s;
+}
+.preview-card.promoting {
+  transform: translateY(0) scale(1);
+}
+.idea-card {
+  transform-origin: center top;
+  transition: transform 0.3s ease-in-out;
+}
+.idea-card.dragging {
+  transition: none;
+}
+.idea-card.exiting {
+  pointer-events: none;
+}
+.deck-area {
+  height: min(759px, calc(100dvh - 270px));
+}
+.app-header {
+  margin-bottom: 8px;
+}
+@media (max-height: 900px) {
+  .preview-card .thumbnail {
+    height: 43%;
+  }
+}
+@media (max-width: 540px) {
+  .deck-area {
+    height: calc(100dvh - 260px);
+    min-height: 410px;
+  }
+  .top-progress {
+    padding: 12px 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .preview-card,
+  .idea-card {
+    transition: none;
+  }
+}

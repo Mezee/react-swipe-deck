@@ -21,6 +21,8 @@ test('browse five ideas, hold to read, select, and return', async ({
     );
   }
   await page.getByRole('button', { name: 'Next idea', exact: true }).click();
+  await expect(page.getByRole('article')).toHaveAttribute('aria-label', 'Video idea 1 of 5');
+  await expect(page.getByRole('article')).not.toHaveClass(/exiting/);
   const card = await page.getByRole('article').boundingBox();
   if (!card) throw new Error('Missing card');
   await page.mouse.move(card.x + card.width / 2, card.y + 100);
@@ -75,16 +77,12 @@ test('mobile report scrolls and dismisses only at the top', async ({
     el.scrollTop = 500;
   });
   const swipe = async () => {
-    await page
-      .locator('.report-scroll')
-      .dispatchEvent('touchstart', {
-        touches: [{ identifier: 1, clientX: 100, clientY: 100 }],
-      });
-    await page
-      .locator('.report-scroll')
-      .dispatchEvent('touchend', {
-        changedTouches: [{ identifier: 1, clientX: 100, clientY: 250 }],
-      });
+    await page.locator('.report-scroll').dispatchEvent('touchstart', {
+      touches: [{ identifier: 1, clientX: 100, clientY: 100 }],
+    });
+    await page.locator('.report-scroll').dispatchEvent('touchend', {
+      changedTouches: [{ identifier: 1, clientX: 100, clientY: 250 }],
+    });
   };
   await swipe();
   await expect(page.getByRole('dialog')).toBeVisible();
@@ -99,4 +97,38 @@ test('mobile report scrolls and dismisses only at the top', async ({
   );
   expect(overflow).toBe(false);
   await context.close();
+});
+
+test('direction overlays and fly-out animation match the demo', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:5173');
+  const card = page.getByRole('article');
+  const box = await card.boundingBox();
+  if (!box) throw new Error('Missing card');
+  await expect(
+    page.getByRole('navigation', { name: 'Deck progress' }).getByRole('button'),
+  ).toHaveCount(5);
+  for (const direction of [-1, 1]) {
+    await page.mouse.move(box.x + box.width / 2, box.y + 150);
+    await page.mouse.down();
+    await page.mouse.move(
+      box.x + box.width / 2 + direction * 150,
+      box.y + 150,
+      { steps: 8 },
+    );
+    const overlay = card.getByTestId('drag-overlay');
+    await expect(overlay).toHaveCSS(
+      'background-color',
+      direction < 0 ? 'rgb(244, 67, 54)' : 'rgb(0, 191, 165)',
+    );
+    await page.screenshot({
+      path:
+        direction < 0 ? 'artifacts/drag-left.png' : 'artifacts/drag-right.png',
+    });
+    await page.mouse.up();
+    await expect(card).toHaveClass(/exiting/);
+    await expect(card).not.toHaveClass(/exiting/);
+  }
+  await expect(card).toHaveAttribute('aria-label', 'Video idea 1 of 5');
 });

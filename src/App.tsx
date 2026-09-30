@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { ideas, type VideoIdea } from './content';
 import { clamp } from './utils/math';
 import './index.css';
+import ProgressMask from './components/progress-mask';
 const thumbnail = '/thumbnail.jpg';
 function Heading({ idea }: { idea: VideoIdea }) {
   return (
@@ -19,6 +20,8 @@ function App() {
   const [index, setIndex] = useState(0),
     [expanded, setExpanded] = useState(false),
     [holding, setHolding] = useState(false),
+    [interacting, setInteracting] = useState(false),
+    [exiting, setExiting] = useState(false),
     [drag, setDrag] = useState({ x: 0, y: 0 }),
     [selected, setSelected] = useState<string | null>(() =>
       localStorage.getItem('selected-video'),
@@ -26,6 +29,8 @@ function App() {
     [comment, setComment] = useState(0);
   const start = useRef<{ x: number; y: number } | null>(null),
     timer = useRef<ReturnType<typeof setTimeout>>(),
+    flightTimer = useRef<ReturnType<typeof setTimeout>>(),
+    busy = useRef(false),
     report = useRef<HTMLDivElement>(null),
     reportStart = useRef<number | null>(null);
   const idea = ideas[index];
@@ -33,14 +38,26 @@ function App() {
     clearTimeout(timer.current);
     setHolding(false);
   };
-  const navigate = (direction: number) => {
+  const navigate = (direction: number, flightDirection = direction) => {
+    if (busy.current) return;
     cancel();
-    setIndex((i) => (i + direction + ideas.length) % ideas.length);
-    setDrag({ x: 0, y: 0 });
-    setComment(0);
+    start.current = null;
+    setInteracting(false);
+    busy.current = true;
+    setExiting(true);
+    setDrag({ x: flightDirection * (window.innerWidth + 500), y: 40 });
+    flightTimer.current = setTimeout(() => {
+      setIndex((i) => (i + direction + ideas.length) % ideas.length);
+      setDrag({ x: 0, y: 0 });
+      setComment(0);
+      setExiting(false);
+      busy.current = false;
+    }, 300);
   };
   const open = () => {
+    if (busy.current) return;
     cancel();
+    setInteracting(false);
     start.current = null;
     setDrag({ x: 0, y: 0 });
     setExpanded(true);
@@ -49,18 +66,22 @@ function App() {
     setExpanded(false);
     reportStart.current = null;
   };
-  useEffect(() => () => clearTimeout(timer.current), []);
+  useEffect(
+    () => () => {
+      clearTimeout(timer.current);
+      clearTimeout(flightTimer.current);
+    },
+    [],
+  );
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setExpanded(false);
-      if (!expanded && e.key === 'ArrowRight')
-        setIndex((i) => (i + 1) % ideas.length);
-      if (!expanded && e.key === 'ArrowLeft')
-        setIndex((i) => (i + ideas.length - 1) % ideas.length);
+      if (!expanded && e.key === 'ArrowRight') navigate(1);
+      if (!expanded && e.key === 'ArrowLeft') navigate(-1);
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
-  }, [expanded]);
+  });
   useEffect(() => {
     if (expanded) {
       const previous = document.activeElement as HTMLElement;
@@ -69,7 +90,8 @@ function App() {
     }
   }, [expanded]);
   const down = (e: PointerEvent<HTMLElement>) => {
-    if (e.button !== 0) return;
+    if (e.button !== 0 || busy.current) return;
+    setInteracting(true);
     e.currentTarget.setPointerCapture(e.pointerId);
     start.current = { x: e.clientX, y: e.clientY };
     setHolding(true);
@@ -80,14 +102,15 @@ function App() {
     const x = e.clientX - start.current.x,
       y = e.clientY - start.current.y;
     if (Math.hypot(x, y) > 10) cancel();
-    setDrag({ x: x * 0.8, y: y * 0.25 });
+    setDrag({ x: x * 0.8, y: y * 0.5 });
   };
   const up = (e: PointerEvent<HTMLElement>) => {
     cancel();
+    setInteracting(false);
     if (!start.current) return;
     const dx = e.clientX - start.current.x;
     start.current = null;
-    if (Math.abs(dx) > 100) navigate(dx < 0 ? 1 : -1);
+    if (Math.abs(dx) > 100) navigate(dx < 0 ? 1 : -1, dx < 0 ? -1 : 1);
     else setDrag({ x: 0, y: 0 });
   };
   return (
@@ -96,20 +119,47 @@ function App() {
         <span>Next video</span>
         <small>Five ideas. One next move.</small>
       </header>
+      <nav className="top-progress" aria-label="Deck progress">
+        {ideas.map((v, i) => (
+          <button
+            key={v.id}
+            aria-label={`Go to idea ${i + 1}`}
+            aria-current={i === index ? 'step' : undefined}
+            className={i <= index ? 'filled' : ''}
+            disabled={exiting}
+            onClick={() => {
+              cancel();
+              setIndex(i);
+              setComment(0);
+            }}
+          />
+        ))}
+      </nav>
       <div className="deck-area">
-        <div className="stack back-two" />
-        <div className="stack back-one" />
+        <div
+          className={`stack preview-card ${exiting ? 'promoting' : ''}`}
+          aria-hidden="true"
+        >
+          <div className="thumbnail">
+            <img src={thumbnail} alt="" />
+          </div>
+          <div className="description">
+            <Heading idea={ideas[(index + 1) % ideas.length]} />
+          </div>
+        </div>
         <article
+          key={idea.id}
           aria-label={`Video idea ${index + 1} of 5`}
-          className="idea-card"
+          className={`idea-card ${interacting ? 'dragging' : ''} ${exiting ? 'exiting' : ''}`}
           style={{
-            transform: `translate(${drag.x}px,${drag.y}px) rotate(${clamp(drag.x / 600, -1, 1) * -15}deg)`,
+            transform: `translate(${drag.x}px,${drag.y}px) rotate(${clamp(drag.x / 600, -1, 1) * -30}deg)`,
           }}
           onPointerDown={down}
           onPointerMove={move}
           onPointerUp={up}
           onPointerCancel={() => {
             cancel();
+            setInteracting(false);
             start.current = null;
             setDrag({ x: 0, y: 0 });
           }}
@@ -138,6 +188,10 @@ function App() {
           <div className="description">
             <Heading idea={idea} />
           </div>
+          <ProgressMask
+            progress={clamp(drag.x / 100, -1, 1)}
+            isInteracting={interacting}
+          />
           <div className={`hold-track ${holding ? 'holding' : ''}`}>
             <span />
           </div>
@@ -147,20 +201,6 @@ function App() {
         <button aria-label="Previous idea" onClick={() => navigate(-1)}>
           ←
         </button>
-        <div className="dots">
-          {ideas.map((v, i) => (
-            <button
-              key={v.id}
-              className={index === i ? 'active' : ''}
-              aria-label={`Go to idea ${i + 1}`}
-              aria-current={index === i ? 'true' : undefined}
-              onClick={() => {
-                setIndex(i);
-                setComment(0);
-              }}
-            />
-          ))}
-        </div>
         <button aria-label="Next idea" onClick={() => navigate(1)}>
           →
         </button>
