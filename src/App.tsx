@@ -21,16 +21,17 @@ function Heading({
   shared?: boolean;
 }) {
   return (
-    <>
-      <motion.h1 layoutId={shared ? `title-${idea.id}` : undefined}>
-        {idea.title}
-      </motion.h1>
+    <motion.div
+      className="heading-block"
+      layoutId={shared ? `heading-${idea.id}` : undefined}
+    >
+      <h1>{idea.title}</h1>
       <p className="signal">{idea.signal}</p>
       <div className="badge">
         Demand Score <strong>{idea.score}</strong>
         <span aria-hidden="true">★</span>
       </div>
-    </>
+    </motion.div>
   );
 }
 function App() {
