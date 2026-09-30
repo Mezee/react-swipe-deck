@@ -149,10 +149,6 @@ function App() {
   return (
     <LayoutGroup>
       <main>
-        <header className="app-header">
-          <span>Next video</span>
-          <small>Five ideas. One next move.</small>
-        </header>
         <nav className="top-progress" aria-label="Deck progress">
           {ideas.map((v, i) => (
             <button
@@ -219,19 +215,6 @@ function App() {
                 alt="Pixelated owl from your Paper design"
                 draggable={false}
               />
-              {index > 0 && (
-                <span className="thumbnail-caption">
-                  {
-                    [
-                      '',
-                      'YOUR FILES. YOUR AI.',
-                      'WHAT HARDWARE?',
-                      'ONE REAL WORKFLOW',
-                      'GET UNSTUCK',
-                    ][index]
-                  }
-                </span>
-              )}
             </motion.div>
             <div className="description">
               <Heading idea={idea} shared />
