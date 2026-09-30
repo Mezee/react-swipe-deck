@@ -337,25 +337,6 @@ function App() {
                     duration: reducedMotion ? 0 : undefined,
                   }}
                 >
-                  <button
-                    className="handle"
-                    aria-label="Close report"
-                    onClick={close}
-                    onPointerDown={(e) => {
-                      reportStart.current = e.clientY;
-                      e.currentTarget.setPointerCapture(e.pointerId);
-                    }}
-                    onPointerUp={(e) => {
-                      if (
-                        reportStart.current !== null &&
-                        e.clientY - reportStart.current > 60
-                      )
-                        close();
-                      reportStart.current = null;
-                    }}
-                  >
-                    <span />
-                  </button>
                   <motion.div
                     className="thumbnail"
                     layoutId={`thumbnail-${idea.id}`}

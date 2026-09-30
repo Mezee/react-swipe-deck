@@ -252,21 +252,7 @@ h2 {
   font-size: 50px;
   line-height: 1;
 }
-.handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 22px;
-  background: white;
-  touch-action: none;
-}
-.handle span {
-  width: 44px;
-  height: 4px;
-  border-radius: 4px;
-  background: #bdbdbd;
-}
+
 .select-button {
   background: #292f36;
   color: white;
