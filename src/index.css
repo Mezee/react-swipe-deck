@@ -487,3 +487,23 @@ main > .sample-note {
     stroke-dashoffset: 0;
   }
 }
+
+/* Let the perimeter halo sit outside the card without clipping its glow. */
+.idea-card {
+  overflow: visible;
+}
+.idea-card > .description {
+  border-radius: 0 0 10px 10px;
+}
+.idea-card > [data-testid='drag-overlay'] {
+  border-radius: 10px;
+  overflow: hidden;
+}
+.hold-perimeter {
+  inset: -8px;
+  width: calc(100% + 16px);
+  height: calc(100% + 16px);
+}
+.hold-perimeter rect {
+  rx: 14px;
+}
