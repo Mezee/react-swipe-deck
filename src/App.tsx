@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent } from 'react';
 import { ideas, type VideoIdea } from './content';
 import { clamp } from './utils/math';
 import './index.css';
+import LightRays from './components/light-rays/LightRays';
 import {
   motion,
   AnimatePresence,
@@ -112,7 +113,7 @@ function App() {
     start.current = { x: e.clientX, y: e.clientY };
     sample.current = { x: e.clientX, time: performance.now(), velocity: 0 };
     setHolding(true);
-    timer.current = setTimeout(open, 3000);
+    timer.current = setTimeout(open, 1000);
   };
   const move = (e: PointerEvent<HTMLElement>) => {
     if (!start.current) return;
@@ -149,6 +150,20 @@ function App() {
   return (
     <LayoutGroup>
       <main>
+        <div className="stage-lights" aria-hidden="true">
+          {!reducedMotion && !expanded && (
+            <LightRays
+              raysOrigin="top-center"
+              raysColor="#e2e8ff"
+              raysSpeed={0.35}
+              lightSpread={0.65}
+              rayLength={2.5}
+              fadeDistance={1.5}
+              followMouse={false}
+              mouseInfluence={0}
+            />
+          )}
+        </div>
         <nav className="top-progress" aria-label="Deck progress">
           {ideas.map((v, i) => (
             <button
@@ -240,7 +255,7 @@ function App() {
           <button className="text-button" onClick={open}>
             View report ↗
           </button>
-          <span>{index + 1} / 5 · Hold card for 3 seconds</span>
+          <span>{index + 1} / 5 · Hold card for 1 second</span>
         </div>
         <p className="sample-note">
           Prototype content · Scores and ideas are illustrative; first card uses
@@ -252,9 +267,9 @@ function App() {
             <motion.div
               className="report-overlay"
               key="report"
-              initial={{ backgroundColor: '#eeeeee00' }}
-              animate={{ backgroundColor: '#eeeeee' }}
-              exit={{ backgroundColor: '#eeeeee00' }}
+              initial={{ backgroundColor: '#08090d00' }}
+              animate={{ backgroundColor: '#08090d' }}
+              exit={{ backgroundColor: '#08090d00' }}
               transition={{ duration: reducedMotion ? 0 : 0.3 }}
               role="dialog"
               aria-modal="true"

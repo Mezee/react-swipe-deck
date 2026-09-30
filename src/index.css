@@ -126,7 +126,7 @@ h1 {
 }
 .holding span {
   width: 100%;
-  transition: width 3s linear;
+  transition: width 1s linear;
 }
 .deck-controls {
   display: flex;
@@ -431,4 +431,36 @@ h2 {
 }
 .idea-card.dragging {
   cursor: grabbing;
+}
+
+/* Dark stage, with light rays behind the card rather than over its content. */
+body {
+  background: #08090d;
+}
+main {
+  isolation: isolate;
+  position: relative;
+}
+.stage-lights {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse at 50% 18%, #20253255, transparent 70%);
+}
+.deck-footer {
+  color: #e5e7eb;
+}
+main > .sample-note {
+  color: #a6abb6;
+}
+.top-progress button {
+  outline-color: #747b8980;
+  background: #ffffff08;
+}
+.top-progress button.filled {
+  background: #bfc7d6;
+}
+.report-overlay {
+  background: #08090d;
 }

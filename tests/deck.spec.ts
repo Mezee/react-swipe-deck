@@ -30,7 +30,7 @@ test('browse five ideas, hold to read, select, and return', async ({
   if (!card) throw new Error('Missing card');
   await page.mouse.move(card.x + card.width / 2, card.y + 100);
   await page.mouse.down();
-  await page.waitForTimeout(3100);
+  await page.waitForTimeout(1100);
   await page.mouse.up();
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(
