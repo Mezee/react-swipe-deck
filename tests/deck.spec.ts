@@ -46,7 +46,8 @@ test('browse five ideas, hold to read, select, and return', async ({
   await page.keyboard.press('Escape');
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.reload();
-  await page.getByRole('button', { name: 'View report' }).click();
+  await page.getByRole('article').focus();
+  await page.getByRole('article').press('Enter');
   await expect(
     page.getByRole('button', { name: 'Selected as your next video' }),
   ).toBeVisible();
@@ -77,7 +78,8 @@ test('mobile report scrolls and dismisses only at the top', async ({
   const page = await context.newPage();
   await page.goto('http://127.0.0.1:5173');
   await page.screenshot({ path: 'artifacts/mobile-deck.png' });
-  await page.getByRole('button', { name: 'View report' }).click();
+  await page.getByRole('article').focus();
+  await page.getByRole('article').press('Enter');
   await page.locator('.report-scroll').evaluate((el) => {
     el.scrollTop = 500;
   });
@@ -160,7 +162,8 @@ test('short flick navigates and a slow short drag springs back', async ({
   await expect(card).not.toHaveClass(/exiting/);
   await expect(card).toHaveAttribute('aria-label', 'Video idea 2 of 5');
   await expect(card).toHaveCSS('transform', 'none');
-  await page.getByRole('button', { name: 'View report' }).click();
+  await page.getByRole('article').focus();
+  await page.getByRole('article').press('Enter');
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.waitForTimeout(700);
   await page.screenshot({ path: 'artifacts/morph-report.png' });

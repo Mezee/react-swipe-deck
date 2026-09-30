@@ -9,7 +9,7 @@ Forked from almond-bongbong/react-swipe-deck (MIT). The original swipe interacti
 2. `npm run dev -- --host 127.0.0.1`
 3. Open http://127.0.0.1:5173
 
-Swipe left/right or use arrows to browse five ideas. Hold a card for one second to expand, or click View report. Swipe down at the top of the report, drag the top handle, press Escape, or click × to return. Make this next saves one selection in local storage.
+Swipe left/right or use arrows to browse five ideas. Hold a card for one second to expand, or focus the card and press Enter. Swipe down at the top of the report, drag the top handle, press Escape, or click × to return. Make this next saves one selection in local storage.
 
 Edit `src/content.ts` for content. The Paper thumbnail is saved in `public/thumbnail.jpg`; other cards currently reuse it with concept labels. Scores and additional candidates are illustrative, not fresh research. The first candidate draws from the supplied local AI report.
 

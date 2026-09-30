@@ -197,6 +197,14 @@ function App() {
           </div>
           <motion.article
             key={idea.id}
+            tabIndex={expanded ? -1 : 0}
+            aria-description="Hold for one second or press Enter to open the report."
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                open();
+              }
+            }}
             aria-label={`Video idea ${index + 1} of 5`}
             className={`idea-card ${interacting ? 'dragging' : ''} ${exiting ? 'exiting' : ''}`}
             layoutId={`card-${idea.id}`}
@@ -269,16 +277,6 @@ function App() {
             →
           </button>
         </nav>
-        <div className="deck-footer">
-          <button className="text-button" onClick={open}>
-            View report ↗
-          </button>
-          <span>{index + 1} / 5 · Hold card for 1 second</span>
-        </div>
-        <p className="sample-note">
-          Prototype content · Scores and ideas are illustrative; first card uses
-          your supplied report.
-        </p>
         <AnimatePresence>
           {' '}
           {expanded && (
