@@ -238,9 +238,24 @@ function App() {
               progress={clamp(drag.x / 100, -1, 1)}
               isInteracting={interacting}
             />
-            <div className={`hold-track ${holding ? 'holding' : ''}`}>
-              <span />
-            </div>
+            {holding && (
+              <svg className="hold-perimeter" aria-hidden="true">
+                <rect
+                  className="hold-glow"
+                  x="4"
+                  y="4"
+                  rx="7"
+                  pathLength="100"
+                />
+                <rect
+                  className="hold-stroke"
+                  x="4"
+                  y="4"
+                  rx="7"
+                  pathLength="100"
+                />
+              </svg>
+            )}
           </motion.article>
         </div>
         <nav className="deck-controls" aria-label="Deck navigation">

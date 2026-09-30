@@ -111,23 +111,6 @@ h1 {
   color: #edcd36;
   font-size: 17px;
 }
-.hold-track {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-}
-.hold-track span {
-  display: block;
-  width: 0;
-  height: 100%;
-  background: #292f36;
-}
-.holding span {
-  width: 100%;
-  transition: width 1s linear;
-}
 .deck-controls {
   display: flex;
   align-items: center;
@@ -463,4 +446,44 @@ main > .sample-note {
 }
 .report-overlay {
   background: #08090d;
+}
+
+.hold-perimeter {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 5;
+}
+.hold-perimeter rect {
+  width: calc(100% - 8px);
+  height: calc(100% - 8px);
+  fill: none;
+  stroke: #c8efff;
+  stroke-dasharray: 100;
+  stroke-dashoffset: 100;
+  stroke-linecap: round;
+  animation: hold-outline 1s linear forwards;
+}
+.hold-stroke {
+  stroke-width: 2.5;
+  filter: drop-shadow(0 0 3px #78cfff) drop-shadow(0 0 6px #78cfff);
+}
+.hold-glow {
+  stroke-width: 6;
+  filter: blur(4px);
+  opacity: 0.8;
+}
+@keyframes hold-outline {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hold-perimeter rect {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
 }
